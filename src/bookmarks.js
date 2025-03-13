@@ -78,15 +78,15 @@ export async function scrapeBookmarks(browserObj, config) {
     try {
       await page.goto(`${config.twitterBaseUrl}${config.bookmarksPath}`, { 
         waitUntil: 'domcontentloaded',
-        timeout: config.timeout 
+        timeout: Math.min(config.timeout / 2, 15000) // Reduced timeout
       });
     } catch (error) {
       logger.error('Failed to navigate to bookmarks page:', error);
       throw new Error(`Navigation to bookmarks failed: ${error.message}`);
     }
     
-    // Wait for the page to stabilize
-    await page.waitForLoadState('networkidle').catch(e => 
+    // Wait for the page to stabilize (with reduced timeout)
+    await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(e => 
       logger.debug('Network never reached idle state on bookmarks page, continuing anyway:', e.message)
     );
     
@@ -233,12 +233,12 @@ export async function scrapeBookmarks(browserObj, config) {
           logger.info(`Visiting tweet: ${tweetUrl}`);
           await page.goto(tweetUrl, { 
             waitUntil: 'domcontentloaded',
-            timeout: config.timeout 
+            timeout: Math.min(config.timeout / 2, 15000) // Significantly reduced timeout
           });
           
           // Wait for the page to load (reduced timeouts)
-          await page.waitForLoadState('networkidle').catch(() => {});
-          await page.waitForTimeout(1000); // Reduced from 2000
+          await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
+          await page.waitForTimeout(500); // Further reduced from 1000
           
           // Try to get username if we couldn't get it from the bookmarks page
           if (!bookmark.username) {
@@ -256,16 +256,16 @@ export async function scrapeBookmarks(browserObj, config) {
             }
           }
           
-          // Wait a bit longer for the content to fully load
-          await page.waitForTimeout(3000);
+          // Wait a bit longer for the content to fully load (reduced significantly)
+          await page.waitForTimeout(1000);
           
-          // Try to load more replies if there's a "Show more replies" button
+          // Try to load more replies if there's a "Show more replies" button (with reduced wait time)
           try {
             const showMoreButton = await page.$('div[role="button"]:has-text("Show more replies")');
             if (showMoreButton) {
               logger.debug('Found "Show more replies" button, clicking it');
               await showMoreButton.click();
-              await page.waitForTimeout(3000);
+              await page.waitForTimeout(1000); // Reduced from 3000
             }
           } catch (e) {
             logger.debug('No "Show more replies" button found or error clicking it');
@@ -376,9 +376,9 @@ export async function scrapeBookmarks(browserObj, config) {
         logger.debug('Returning to bookmarks page...');
         await page.goto(`${config.twitterBaseUrl}${config.bookmarksPath}`, { 
           waitUntil: 'domcontentloaded',
-          timeout: config.timeout 
+          timeout: Math.min(config.timeout / 2, 15000) // Reduced timeout
         });
-        await page.waitForTimeout(1000); // Reduced from 2000
+        await page.waitForTimeout(500); // Further reduced from 1000
         
         // If we've reached the limit, break out
         if (config.limit > 0 && processedCount >= config.limit) {

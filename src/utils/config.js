@@ -23,9 +23,9 @@ const defaultConfig = {
   headless: true,
   // Browser configuration
   viewport: { width: 1280, height: 900 },
-  timeout: 30000, // Default timeout in ms (reduced from 60s to 30s)
+  timeout: 20000, // Default timeout in ms (reduced from 30s to 20s for faster operation)
   // Scraping parameters
-  scrollDelay: 800, // Milliseconds between scrolls (reduced for faster operation)
+  scrollDelay: 500, // Milliseconds between scrolls (further reduced for faster operation)
   maxScrolls: 1000, // Safety limit for infinite scrolls (increased to allow for more bookmarks)
   retryAttempts: 3, // Number of retry attempts for operations
   retryDelay: 1000, // Delay between retries in ms
@@ -87,8 +87,8 @@ export function loadConfig(cliOptions = {}) {
     headless: true,
     // Browser configuration
     viewport: { width: 1280, height: 900 },
-    timeout: 30000, // Default timeout in ms
-    scrollDelay: 800, // Milliseconds between scrolls
+    timeout: 20000, // Default timeout in ms (reduced to 20s)
+    scrollDelay: 500, // Milliseconds between scrolls (reduced for faster operation)
     maxScrolls: 1000, // Safety limit for infinite scrolls (increased from 500)
     retryAttempts: 3, // Number of retry attempts for operations
     retryDelay: 1000, // Delay between retries in ms

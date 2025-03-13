@@ -1,14 +1,58 @@
+/**
+ * @module bookmarks
+ * @description Core functionality of TwiMine: Handles Twitter bookmark scraping,
+ * processing links, and mining valuable information with robust error handling
+ * and optimization strategies
+ */
+
 import { logger } from './utils/logger.js';
 
 /**
+ * Bookmark object type definition
+ * @typedef {Object} BookmarkType
+ * @property {string} tweet_url - URL of the Twitter/X post
+ * @property {string|null} username - Twitter username of the tweet author
+ * @property {string|null} tweet_text - Text content of the tweet
+ * @property {string|null} github_url - Extracted GitHub URL (if any)
+ * @property {Array<string>} all_links - All links found in the tweet
+ * @property {string} scraped_at - ISO timestamp of when the bookmark was scraped
+ */
+
+/**
+ * Browser instance returned from authentication
+ * @typedef {Object} BrowserInstance
+ * @property {import('playwright').Browser} browser - Playwright Browser instance
+ * @property {import('playwright').BrowserContext} context - Playwright BrowserContext
+ * @property {import('playwright').Page} page - Playwright Page with active Twitter session
+ */
+
+/**
+ * Configuration type definition
+ * @typedef {Object} Config
+ * @property {number} limit - Maximum number of bookmarks to scrape (0 = unlimited)
+ * @property {number} timeout - Operation timeout in milliseconds
+ * @property {string} twitterBaseUrl - Base URL for Twitter
+ * @property {string} bookmarksPath - Path to bookmarks page
+ * @property {number} maxScrolls - Maximum number of scroll operations
+ * @property {number} scrollDelay - Delay between scrolls in milliseconds
+ * @property {boolean} debug - Whether debug mode is enabled
+ */
+
+/**
  * Navigates to the bookmarks page and processes bookmarks immediately as they're found
- * @param {Object} browserObj Object containing browser, context and page
- * @param {Object} config Configuration options
- * @returns {Array} Array of bookmark objects with extracted information
+ * 
+ * @param {BrowserInstance} browserObj - Object containing browser, context and page
+ * @param {Config} config - Configuration options
+ * @returns {Promise<Array<BookmarkType>>} Array of bookmark objects with extracted information
+ * @throws {Error} If there is an error during scraping
  */
 export async function scrapeBookmarks(browserObj, config) {
   const { page, context } = browserObj;
+  
+  // Array to hold all bookmarks
+  /** @type {Array<BookmarkType>} */
   const bookmarks = [];
+  
   let processedCount = 0;
   let reachedEnd = false;
   let scrollCount = 0;
@@ -125,24 +169,31 @@ export async function scrapeBookmarks(browserObj, config) {
       
       // Get tweet links currently visible on the page
       const visibleTweetLinks = await page.evaluate(() => {
-        const links = [];
+        // Performance improvement: Use Set for automatic deduplication during collection
+        const linkSet = new Set();
         document.querySelectorAll('a[href*="/status/"]').forEach(link => {
-          if (link.href && link.href.includes('/status/') && 
-              !link.href.includes('/analytics') &&
-              !links.includes(link.href)) {
-            links.push(link.href);
+          // Cast to HTMLAnchorElement to access href property
+          const anchor = link;
+          if (anchor instanceof HTMLAnchorElement && 
+              anchor.href && 
+              anchor.href.includes('/status/') && 
+              !anchor.href.includes('/analytics')) {
+            linkSet.add(anchor.href);
           }
         });
-        return links;
+        return Array.from(linkSet);
       });
       
       logger.debug(`Found ${visibleTweetLinks.length} tweet links on current screen`);
+      
+      // Performance improvement: Create a Set of processed URLs for faster lookups
+      const processedUrls = new Set(bookmarks.map(b => b.tweet_url));
       
       // Process each unprocessed bookmark
       let processedAny = false;
       for (const tweetUrl of visibleTweetLinks) {
         // Skip if we've already processed this tweet or reached the limit
-        if (bookmarks.some(b => b.tweet_url === tweetUrl) || 
+        if (processedUrls.has(tweetUrl) || 
             (config.limit > 0 && processedCount >= config.limit)) {
           continue;
         }
@@ -151,13 +202,13 @@ export async function scrapeBookmarks(browserObj, config) {
         processedAny = true;
         logger.info(`Processing bookmark ${processedCount}${config.limit > 0 ? '/' + config.limit : ''}: ${tweetUrl}`);
         
-        // Create a new bookmark object with all_links field
+        // Create a new bookmark object
         const bookmark = {
           tweet_url: tweetUrl,
           username: null,
           tweet_text: null,
           github_url: null, // Keep for backward compatibility
-          all_links: [], // Store all redirected links
+          all_links: /** @type {Array<string>} */([]), // Store all redirected links
           scraped_at: new Date().toISOString()
         };
         
@@ -170,7 +221,7 @@ export async function scrapeBookmarks(browserObj, config) {
           if (tweetElement) {
             const username = await page.evaluate(el => {
               const usernameEl = el.querySelector('div[data-testid="User-Name"] a:nth-child(2)');
-              return usernameEl ? usernameEl.textContent.trim() : null;
+              return usernameEl && usernameEl.textContent ? usernameEl.textContent.trim() : null;
             }, tweetElement);
             
             if (username) {
@@ -194,7 +245,7 @@ export async function scrapeBookmarks(browserObj, config) {
             try {
               const username = await page.evaluate(() => {
                 const usernameEl = document.querySelector('div[data-testid="User-Name"] a:nth-child(2)');
-                return usernameEl ? usernameEl.textContent.trim() : null;
+                return usernameEl && usernameEl.textContent ? usernameEl.textContent.trim() : null;
               });
               
               if (username) {
@@ -237,7 +288,9 @@ export async function scrapeBookmarks(browserObj, config) {
           // Track if we found a GitHub link
           let foundGitHubLink = false;
           let linksChecked = 0;
-          let finalUrls = []; // Store all discovered final URLs
+          
+          // Performance improvement: Use Set for automatic deduplication
+          const finalUrlsSet = new Set();
           
           // Check each tweet for links - similar to test-tco-links.js approach
           for (const tweetElement of allTweets) {
@@ -278,8 +331,8 @@ export async function scrapeBookmarks(browserObj, config) {
                     const finalUrl = redirectPage.url();
                     logger.info(`Link redirected to: ${finalUrl}`);
                     
-                    // Add to finalUrls array
-                    finalUrls.push(finalUrl);
+                    // Add to finalUrls set
+                    finalUrlsSet.add(finalUrl);
                     
                     // Also set github_url if it's a GitHub link
                     if (finalUrl.includes('github.com') && 
@@ -301,9 +354,8 @@ export async function scrapeBookmarks(browserObj, config) {
             }
           }
           
-          // Remove duplicate URLs from finalUrls
-          const uniqueUrls = [...new Set(finalUrls)];
-          bookmark.all_links = uniqueUrls;
+          // Convert set to array
+          bookmark.all_links = Array.from(finalUrlsSet);
           
           logger.info(`Found ${bookmark.all_links.length} unique links in this tweet`);
           logger.info(`Checked ${linksChecked} links in total. Found GitHub link: ${foundGitHubLink ? 'YES' : 'NO'}`);
@@ -405,13 +457,27 @@ export async function scrapeBookmarks(browserObj, config) {
 }
 
 /**
+ * Scroll result type definition
+ * @typedef {Object} ScrollResult
+ * @property {boolean} didScroll - Whether the page scrolled
+ * @property {boolean} heightChanged - Whether the document height changed
+ * @property {number} prevScrollTop - Previous scroll position
+ * @property {number} newScrollTop - New scroll position
+ * @property {number} prevHeight - Previous document height
+ * @property {number} newHeight - New document height
+ */
+
+/**
  * Smart scroll function that checks page height before and after scrolling
  * to detect if we've reached the bottom
- * @param {Object} page Playwright page object
- * @param {number} delay Delay between scrolls in milliseconds
+ * 
+ * @param {import('playwright').Page} page - Playwright page object
+ * @param {number} delay - Delay between scrolls in milliseconds
+ * @returns {Promise<ScrollResult>} Scroll results with information about the scroll operation
  */
 async function smartScroll(page, delay = 1000) {
-  await page.evaluate(async (scrollDelay) => {
+  /** @type {ScrollResult} */
+  const result = await page.evaluate(async (scrollDelay) => {
     return new Promise((resolve) => {
       // Get current scroll position and document height
       const prevScrollTop = window.scrollY;
@@ -440,10 +506,10 @@ async function smartScroll(page, delay = 1000) {
         });
       }, scrollDelay);
     });
-  }, delay).then(result => {
-    // Log scroll results in debug mode
-    logger.debug(`Scroll result: moved=${result.didScroll}, heightChanged=${result.heightChanged}, scrollDelta=${result.newScrollTop - result.prevScrollTop}px, heightDelta=${result.newHeight - result.prevHeight}px`);
-    
-    return result;
-  });
+  }, delay);
+  
+  // Log scroll results in debug mode
+  logger.debug(`Scroll result: moved=${result.didScroll}, heightChanged=${result.heightChanged}, scrollDelta=${result.newScrollTop - result.prevScrollTop}px, heightDelta=${result.newHeight - result.prevHeight}px`);
+  
+  return result;
 }

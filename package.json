@@ -1,7 +1,7 @@
 {
-  "name": "twitter-bookmark-scraper",
+  "name": "twimine",
   "version": "1.0.0",
-  "description": "A robust CLI tool for scraping Twitter bookmarks and extracting GitHub links",
+  "description": "TwiMine: Mining your twitter bookmarks for gold - A tool for extracting valuable links from Twitter bookmarks",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
@@ -24,6 +24,6 @@
     "winston": "^3.9.0"
   },
   "bin": {
-    "twitter-bookmark-scraper": "./src/index.js"
+    "twimine": "./src/index.js"
   }
 }

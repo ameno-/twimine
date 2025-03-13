@@ -1,6 +1,15 @@
+/**
+ * @module utils/logger
+ * @description TwiMine logging system: Custom logger configuration using winston
+ * for better logging capabilities throughout the application
+ */
+
 import winston from 'winston';
 
-// Create custom logger with improved formatting
+/**
+ * Configured winston logger instance with custom formatting
+ * @type {winston.Logger}
+ */
 export const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: winston.format.combine(
@@ -11,7 +20,7 @@ export const logger = winston.createLogger({
     winston.format.splat(),
     winston.format.json()
   ),
-  defaultMeta: { service: 'twitter-bookmark-scraper' },
+  defaultMeta: { service: 'twimine' },
   transports: [
     // Write all logs with level 'error' to stderr with color
     new winston.transports.Console({
@@ -43,7 +52,11 @@ export const logger = winston.createLogger({
   ]
 });
 
-// Adjust log level if in debug mode
+/**
+ * Sets the logger level to debug mode when enabled
+ * @param {boolean} debug - Whether debug mode should be enabled
+ * @returns {void}
+ */
 export function setDebugMode(debug) {
   if (debug) {
     logger.level = 'debug';
@@ -51,7 +64,12 @@ export function setDebugMode(debug) {
   }
 }
 
-// Utility method for critical errors that should stop execution
+/**
+ * Logs a fatal error and exits the process with error code 1
+ * @param {string} message - Error message to log 
+ * @param {Error} [error] - Optional Error object with additional details
+ * @returns {never} Never returns as it exits the process
+ */
 export function fatalError(message, error) {
   if (error) {
     logger.error(`FATAL: ${message}`, { error: error.message, stack: error.stack });

@@ -1,5 +1,12 @@
 #!/usr/bin/env node
 
+/**
+ * @module index
+ * @description Main entry point for the TwiMine CLI tool.
+ * Handles command line arguments, authentication, scraping, and output processing
+ * to mine valuable links from Twitter bookmarks.
+ */
+
 import { program } from 'commander';
 import { authenticateTwitter } from './auth.js';
 import { scrapeBookmarks } from './bookmarks.js';
@@ -15,23 +22,36 @@ logger.debug('Environment variables loaded. TWITTER_PASSWORD exists: ' +
   (env.TWITTER_PASSWORD ? 'Yes' : 'No'));
 
 // Global variables to track execution
+/** @type {import('playwright').Browser|null} */
 let browser = null;
 
-// Clean up resources when process is terminated
-process.on('SIGINT', async () => {
+/**
+ * Clean up resources when process is terminated
+ * @returns {Promise<void>}
+ */
+async function cleanupResources() {
   logger.info('Process interrupted. Cleaning up...');
   if (browser) {
     await browser.close().catch(e => logger.debug('Error closing browser on SIGINT:', e.message));
   }
   process.exit(0);
-});
+}
 
+// Register cleanup handler for SIGINT (Ctrl+C)
+process.on('SIGINT', cleanupResources);
+
+/**
+ * Main application function that handles CLI arguments,
+ * authentication, scraping, and processing output
+ * 
+ * @returns {Promise<number>} Exit code (0 for success, 1 for error)
+ */
 async function main() {
   try {
     // CLI Configuration
     program
-      .name('twitter-bookmark-scraper')
-      .description('A robust CLI tool for scraping Twitter bookmarks and extracting GitHub links')
+      .name('twimine')
+      .description('TwiMine: Mining your twitter bookmarks for gold')
       .version('1.0.0')
       .option('-u, --username <username>', 'Twitter username or email')
       .option('-p, --password <password>', 'Twitter password')
@@ -47,7 +67,7 @@ async function main() {
     const options = program.opts();
     
     // Initial status message
-    logger.info('Twitter Bookmark Scraper starting...');
+    logger.info('TwiMine starting...');
     
     // Load config and merge with CLI options
     const config = loadConfig(options);
@@ -84,7 +104,7 @@ async function main() {
       const summary = generateSummary(processedBookmarks, originalCount, config);
       console.log('\n' + summary);
       
-      logger.info('Twitter Bookmark Scraper completed successfully');
+      logger.info('TwiMine completed successfully');
       return 0;
     } catch (error) {
       // Cleanup browser resources if there was an error

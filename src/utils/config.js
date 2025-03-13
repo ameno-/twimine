@@ -1,9 +1,18 @@
+/**
+ * @module utils/config
+ * @description TwiMine configuration management: Handles loading, validation, and provides utilities for
+ * directory management. Merges defaults with environment variables and CLI options.
+ */
+
 import fs from 'fs';
 import path from 'path';
 import { logger, setDebugMode } from './logger.js';
 import env from './env.js';
 
-// Default configuration with optimized settings
+/**
+ * Default configuration with optimized settings
+ * @type {Object}
+ */
 const defaultConfig = {
   username: env.TWITTER_USERNAME,
   password: env.TWITTER_PASSWORD,
@@ -28,14 +37,46 @@ const defaultConfig = {
 };
 
 /**
- * Load configuration from various sources and merge them
+ * Loads configuration from various sources and merges them
  * Priority: CLI args > .env file > defaults
+ * 
+ * @param {Object} cliOptions - Command line options passed to the program
+ * @param {string} [cliOptions.username] - Twitter username from CLI
+ * @param {string} [cliOptions.password] - Twitter password from CLI
+ * @param {string} [cliOptions.output] - Output JSON file path
+ * @param {boolean} [cliOptions.append] - Whether to append to existing output file
+ * @param {number} [cliOptions.limit] - Maximum bookmarks to scrape
+ * @param {boolean|string} [cliOptions.debug] - Enable debug logging
+ * @param {boolean|string} [cliOptions.headless] - Run in headless mode
+ * @param {string} [cliOptions.timeout] - Operation timeout in milliseconds
+ * @param {string} [cliOptions.screenshotDir] - Directory to save debug screenshots
+ * @returns {Object} Complete configuration object with all settings
+ * @throws {Error} If configuration validation fails
  */
 export function loadConfig(cliOptions = {}) {
   logger.debug('Loading configuration...');
   
-  // Create base configuration
-  let config = {
+  /**
+   * @type {{
+   *   username: string|null;
+   *   password: string|null;
+   *   output: string;
+   *   append: boolean;
+   *   limit: number;
+   *   debug: boolean;
+   *   headless: boolean;
+   *   viewport: {width: number, height: number};
+   *   timeout: number;
+   *   scrollDelay: number;
+   *   maxScrolls: number;
+   *   retryAttempts: number;
+   *   retryDelay: number;
+   *   twitterBaseUrl: string;
+   *   bookmarksPath: string;
+   *   userAgent: string;
+   * }}
+   */
+  const config = {
     // Start with empty values for credentials, will be filled in from env vars or CLI
     username: null,
     password: null,
@@ -86,6 +127,7 @@ export function loadConfig(cliOptions = {}) {
           config[key] = Boolean(cliOptions[key]);
         }
       } else {
+        // @ts-ignore - We know this is safe because we're only setting properties that exist on config
         config[key] = cliOptions[key];
       }
       logger.debug(`Loaded ${key} from CLI arguments`);
@@ -105,9 +147,12 @@ export function loadConfig(cliOptions = {}) {
   }
   
   // Log configuration (excluding sensitive data)
+  /** @type {Partial<typeof config>} */
   const sanitizedConfig = { ...config };
-  delete sanitizedConfig.username;
-  delete sanitizedConfig.password;
+  // @ts-ignore - We know these properties exist
+  sanitizedConfig.username = '[REDACTED]';
+  // @ts-ignore - We know these properties exist
+  sanitizedConfig.password = '[REDACTED]';
   logger.debug('Configuration loaded:', sanitizedConfig);
   
   return config;
@@ -115,8 +160,14 @@ export function loadConfig(cliOptions = {}) {
 
 /**
  * Validates the configuration for required fields and proper values
- * @param {Object} config Configuration to validate
- * @returns {Array} Array of validation error messages
+ * 
+ * @param {Object} config - Configuration to validate
+ * @param {string|null} config.username - Twitter username
+ * @param {string|null} config.password - Twitter password
+ * @param {number} [config.timeout] - Operation timeout in milliseconds
+ * @param {number} [config.limit] - Maximum bookmarks to scrape
+ * @param {number} [config.scrollDelay] - Delay between scrolls in milliseconds
+ * @returns {string[]} Array of validation error messages
  */
 function validateConfig(config) {
   const errors = [];
@@ -147,7 +198,10 @@ function validateConfig(config) {
 }
 
 /**
- * Ensures the output directory exists
+ * Ensures the output directory exists, creating it if necessary
+ * 
+ * @param {string} filePath - Path to the output file
+ * @returns {void}
  */
 export function ensureOutputDir(filePath) {
   const dir = path.dirname(filePath);

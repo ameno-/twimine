@@ -1,10 +1,40 @@
+/**
+ * @module auth
+ * @description Handles Twitter authentication processes for TwiMine including browser setup,
+ * login, challenge handling, and session verification
+ */
+
 import { chromium } from 'playwright';
 import { logger } from './utils/logger.js';
 
 /**
+ * Browser configuration type definition
+ * @typedef {Object} BrowserConfig
+ * @property {string} username - Twitter username or email
+ * @property {string|null} password - Twitter password
+ * @property {boolean|string} headless - Whether to run in headless mode
+ * @property {number} timeout - Operation timeout in milliseconds
+ * @property {Object} viewport - Browser viewport dimensions
+ * @property {number} viewport.width - Viewport width
+ * @property {number} viewport.height - Viewport height
+ * @property {string} userAgent - Browser user agent string
+ * @property {boolean} debug - Whether debug mode is enabled
+ */
+
+/**
+ * Browser instance returned after authentication
+ * @typedef {Object} BrowserInstance
+ * @property {import('playwright').Browser} browser - Playwright Browser instance
+ * @property {import('playwright').BrowserContext} context - Playwright BrowserContext
+ * @property {import('playwright').Page} page - Playwright Page with active Twitter session
+ */
+
+/**
  * Initialize a browser instance and authenticate with Twitter
- * @param {Object} config Configuration options
- * @returns {Object} Browser instance with authenticated context
+ * 
+ * @param {BrowserConfig} config - Configuration options
+ * @returns {Promise<BrowserInstance>} Browser instance with authenticated context
+ * @throws {Error} If authentication fails
  */
 export async function authenticateTwitter(config) {
   logger.debug('======== Authentication Process Started ========');
@@ -115,9 +145,10 @@ export async function authenticateTwitter(config) {
 
 /**
  * Enter username on the login page
- * @param {Object} page Playwright page object
- * @param {Object} config Configuration options
- * @returns {Boolean} Success status
+ * 
+ * @param {import('playwright').Page} page - Playwright page object
+ * @param {BrowserConfig} config - Configuration options
+ * @returns {Promise<boolean>} Success status
  */
 async function enterUsername(page, config) {
   logger.debug('Attempting to enter username...');
@@ -153,7 +184,12 @@ async function enterUsername(page, config) {
     await usernameField.click({ clickCount: 3 });
     await usernameField.press('Backspace');
     
-    // Enter username
+    // Enter username - ensure it's not null (but it shouldn't be at this point)
+    if (!config.username) {
+      logger.error('Username is null, cannot proceed with authentication');
+      return false;
+    }
+    
     await usernameField.fill(config.username);
     logger.debug('Username entered successfully');
     
@@ -247,9 +283,10 @@ async function enterUsername(page, config) {
 
 /**
  * Enter password on the login page
- * @param {Object} page Playwright page object
- * @param {Object} config Configuration options
- * @returns {Boolean} Success status
+ * 
+ * @param {import('playwright').Page} page - Playwright page object
+ * @param {BrowserConfig} config - Configuration options
+ * @returns {Promise<boolean>} Success status
  */
 async function enterPassword(page, config) {
   logger.debug('Attempting to enter password...');
@@ -288,6 +325,13 @@ async function enterPassword(page, config) {
     // Clear the field and enter password
     await passwordField.click({ clickCount: 3 });
     await passwordField.press('Backspace');
+    
+    // Check if password is null
+    if (!config.password) {
+      logger.error('Password is null, cannot proceed with authentication');
+      return false;
+    }
+    
     await passwordField.fill(config.password);
     logger.debug('Password entered successfully');
     
@@ -337,9 +381,10 @@ async function enterPassword(page, config) {
 
 /**
  * Verify login success by checking for Twitter home elements
- * @param {Object} page Playwright page object
- * @param {Object} config Configuration options
- * @returns {Boolean} Success status
+ * 
+ * @param {import('playwright').Page} page - Playwright page object
+ * @param {BrowserConfig} config - Configuration options
+ * @returns {Promise<boolean>} Success status
  */
 async function verifyLoginSuccess(page, config) {
   logger.debug('Verifying successful login...');

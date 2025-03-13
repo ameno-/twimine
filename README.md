@@ -1,169 +1,161 @@
-# Twitter Bookmark Scraper
+# TwiMine
 
-A robust command-line tool for scraping Twitter bookmarks and extracting GitHub links. This tool uses browser automation to access your Twitter bookmarks, scroll through them, and extract any GitHub links found in the tweets.
+Mining your twitter bookmarks for gold - A robust CLI tool for extracting valuable links from your Twitter bookmarks.
 
 ## Features
 
-- **Improved Authentication System** - Reliable login process with fallback mechanisms
-- **Robust Error Handling** - Clear error messages and automatic recovery
-- **Smart Scrolling** - Automatically detects when it has reached the end of bookmarks
-- **Enhanced Link Detection** - Multiple strategies to find GitHub links in tweets
-- **Incremental Updates** - Can append new bookmarks to existing output file
-- **Configurable Behavior** - Customizable timeout, scroll delay, and other parameters
-
-## Prerequisites
-
-- Node.js (v14+)
-- npm or yarn
-- Chromium-based browser (automatically installed by Playwright)
+- Authenticate with Twitter and access your bookmarks
+- Extract all links from bookmarks, with special handling for GitHub links
+- Follow redirects to get final URLs (e.g., t.co links)
+- Save results to JSON format with options to append to existing files
+- Configurable settings via command line arguments or environment variables
+- Detailed logging and error handling
+- Screenshots for debugging (optional)
 
 ## Installation
 
-1. Clone or download this repository:
-```bash
-git clone <repository-url>
-cd twitter-bookmark-scraper-v2
-```
+Make sure you have Node.js v14+ installed. Then:
 
-2. Install dependencies:
 ```bash
+# Clone the repository
+git clone https://github.com/yourusername/twimine.git
+cd twimine
+
+# Install dependencies
 npm install
-```
 
-3. Make the script executable (Unix/macOS):
-```bash
-chmod +x src/index.js
-```
-
-4. (Optional) Link the package globally for command-line access:
-```bash
+# Make the CLI tool globally available (optional)
 npm link
 ```
 
 ## Usage
 
-### Basic Usage
+### Setup
 
-```bash
-node src/index.js -u "your_twitter_username" -p "your_twitter_password"
-```
-
-Or if linked globally:
-
-```bash
-twitter-bookmark-scraper -u "your_twitter_username" -p "your_twitter_password"
-```
-
-### Using Environment Variables
-
-Create a `.env` file in the project root:
+Create a `.env` file in the root directory with your Twitter credentials:
 
 ```
-TWITTER_USERNAME=your_twitter_username
+TWITTER_USERNAME=your_twitter_username_or_email
 TWITTER_PASSWORD=your_twitter_password
 ```
 
-Then run:
+Alternatively, you can pass your credentials via command line arguments.
+
+### Basic Usage
 
 ```bash
-node src/index.js
+# Using environment variables from .env
+npm start
+
+# Using command line arguments
+npm start -- -u yourusername -p yourpassword
+
+# Or if globally linked:
+twimine -u yourusername -p yourpassword
 ```
 
-### Options
+### Command Line Options
 
 ```
 Options:
   -u, --username <username>     Twitter username or email
   -p, --password <password>     Twitter password
   -o, --output <file>           Output JSON file (default: "bookmarks.json")
-  -a, --append                  Append to existing output file
+  -a, --append                  Append to existing output file (default: false)
   -l, --limit <number>          Maximum number of bookmarks to scrape
-  -d, --debug                   Enable debug logging
+  -d, --debug                   Enable debug logging (default: false)
   --headless <boolean>          Run in headless mode (default: true)
   --timeout <milliseconds>      Timeout for operations in milliseconds
   --screenshot-dir <directory>  Directory to save debug screenshots
-  --help                        Display help
+  -h, --help                    Display help information
 ```
 
 ### Examples
 
-Scrape up to 50 bookmarks and save to a custom file:
 ```bash
-twitter-bookmark-scraper -u "username" -p "password" -l 50 -o "github_links.json"
-```
+# Scrape only the first 5 bookmarks
+npm start -- -l 5
 
-Run with visible browser (non-headless mode):
-```bash
-twitter-bookmark-scraper -u "username" -p "password" --headless false
-```
+# Enable debug mode with screenshots
+npm start -- -d --screenshot-dir ./screenshots
 
-Append new bookmarks to an existing output file:
-```bash
-twitter-bookmark-scraper -u "username" -p "password" -a
-```
+# Append new bookmarks to existing output file
+npm start -- -o my-bookmarks.json -a
 
-Debug mode with longer timeout:
-```bash
-twitter-bookmark-scraper -u "username" -p "password" -d --timeout 60000
+# Use a longer timeout for slow connections
+npm start -- --timeout 60000
 ```
 
 ## Output Format
 
-The tool generates a JSON file with the following structure:
+Results are saved as a JSON array of bookmark objects:
 
 ```json
 [
   {
-    "username": "@twitteruser",
-    "tweet_url": "https://twitter.com/twitteruser/status/123456789",
-    "github_url": "https://github.com/user/repo",
-    "scraped_at": "2025-03-08T18:30:00.000Z"
+    "username": "@user123",
+    "tweet_url": "https://twitter.com/user123/status/1234567890123456789",
+    "github_url": "https://github.com/org/repo",
+    "all_links": [
+      "https://github.com/org/repo",
+      "https://example.com/page"
+    ],
+    "scraped_at": "2025-03-12T19:30:45.123Z"
   },
   ...
 ]
 ```
 
+## Project Structure
+
+The project is organized with the following structure:
+
+```
+twimine/
+├── src/
+│   ├── index.js        # Main entry point and CLI handling
+│   ├── auth.js         # Twitter authentication logic
+│   ├── bookmarks.js    # Bookmark scraping functionality
+│   ├── output.js       # Output processing and saving
+│   └── utils/
+│       ├── config.js   # Configuration loading and validation
+│       ├── env.js      # Environment variable handling
+│       └── logger.js   # Logging utilities
+├── .env.example        # Example environment variables
+├── package.json        # Project metadata and dependencies
+└── README.md           # Project documentation
+```
+
+## Technical Details
+
+- Built with Node.js and Playwright for browser automation
+- Uses ES modules for better code organization
+- Robust error handling and retry mechanisms
+- Performance optimizations for processing large numbers of bookmarks
+- Detailed JSDoc comments throughout the codebase
+
 ## Troubleshooting
-
-### Login Issues
-
-This version includes significant improvements to the authentication process, but Twitter's login flow can change. If you encounter login issues:
-
-1. Try running in non-headless mode to see what's happening:
-   ```bash
-   twitter-bookmark-scraper -u "username" -p "password" --headless false
-   ```
-
-2. Enable debug mode for detailed logs:
-   ```bash
-   twitter-bookmark-scraper -u "username" -p "password" -d
-   ```
-
-3. If you have two-factor authentication enabled, you may need to disable it temporarily or use an app password.
-
-4. Some accounts may trigger additional security challenges. Try using your email address instead of username.
 
 ### Common Issues
 
-- **Timeout errors**: Increase the timeout value with `--timeout 60000` (for 60 seconds)
-- **No GitHub links found**: Verify that your bookmarks actually contain tweets with GitHub links
-- **Browser launch failure**: Ensure you have sufficient permissions on your system to launch a browser
-- **Process hangs**: Use Ctrl+C to stop the scraper, which will clean up resources properly
+1. **Authentication Failures**
+   - If you use Two-Factor Authentication (2FA), you'll need to temporarily disable it or use an app password
+   - Verify your username/email and password are correct
 
-## Advanced Configuration
+2. **Timeouts**
+   - For slow connections, increase the timeout: `--timeout 60000` (60 seconds)
+   - Twitter rate limiting may cause timeouts; try again later
 
-The tool includes sensible defaults, but you can customize behavior by modifying `src/utils/config.js`:
+3. **No Bookmarks Found**
+   - Verify you have bookmarks on your Twitter account
+   - Check if your account is restricted or if Twitter has changed their UI
 
-- Adjust scroll behavior parameters
-- Change browser viewport settings
-- Modify timeouts and retry attempts
-- Update user agent strings
+### Debug Mode
 
-## Security Considerations
-
-- This tool requires your Twitter credentials. Consider using environment variables instead of command-line arguments.
-- Credentials are only used for authentication with Twitter and are not stored or transmitted elsewhere.
-- For additional security, consider creating a separate Twitter account for scraping.
+Run with the `-d` flag to enable debug mode, which provides:
+- Verbose console output
+- Screenshots of key operations (when `--screenshot-dir` is specified)
+- More detailed error information
 
 ## License
 

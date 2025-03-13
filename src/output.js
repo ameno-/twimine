@@ -1,3 +1,9 @@
+/**
+ * @module output
+ * @description TwiMine output processing: Handles saving mined bookmark data to files,
+ * including formatting, deduplication, and generating human-readable summaries
+ */
+
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 import { logger } from './utils/logger.js';
@@ -5,9 +11,13 @@ import { ensureOutputDir } from './utils/config.js';
 
 /**
  * Process and save bookmark data to output file with improved error handling
- * @param {Array} bookmarks Array of bookmark objects
- * @param {Object} config Configuration options
- * @returns {Array} Array of processed bookmark objects that were saved
+ * 
+ * @param {Array<Object>} bookmarks - Array of bookmark objects from scraping
+ * @param {Object} config - Configuration options
+ * @param {string} config.output - Path to output file
+ * @param {boolean} config.append - Whether to append to existing output file
+ * @returns {Promise<Array<Object>>} Array of processed bookmark objects that were saved
+ * @throws {Error} If saving output fails
  */
 export async function processOutput(bookmarks, config) {
   try {
@@ -22,8 +32,16 @@ export async function processOutput(bookmarks, config) {
       return true;
     });
     
-    // Format bookmarks data for final output with consistent field order
-    // Include all captured links in addition to github_url, and remove duplicates
+    /**
+     * Format bookmarks data for final output with consistent field order
+     * @type {Array<{
+     *   username: string|null,
+     *   tweet_url: string,
+     *   github_url: string|null,
+     *   all_links: string[],
+     *   scraped_at: string
+     * }>}
+     */
     const formattedBookmarks = finalBookmarks.map(bookmark => {
       // Remove duplicates from all_links
       const uniqueLinks = [...new Set(bookmark.all_links || [])];
@@ -79,7 +97,7 @@ export async function processOutput(bookmarks, config) {
         if (Array.isArray(existingData)) {
           existingCount = existingData.length;
           
-          // Create a Set of existing URLs to check for duplicates efficiently
+          // Performance improvement: Create a Set of existing URLs to check for duplicates efficiently
           const existingUrls = new Set(existingData.map(item => item.tweet_url));
           
           // Only add bookmarks that don't already exist in the file
@@ -129,10 +147,12 @@ export async function processOutput(bookmarks, config) {
 
 /**
  * Generates a human-readable summary of the scraping results
- * @param {Array} bookmarks Array of processed bookmark objects
- * @param {number} originalCount Total number of bookmarks processed
- * @param {Object} config Configuration options
- * @returns {String} Summary text
+ * 
+ * @param {Array<Object>} bookmarks - Array of processed bookmark objects
+ * @param {number} originalCount - Total number of bookmarks processed
+ * @param {Object} config - Configuration options
+ * @param {string} config.output - Path to output file
+ * @returns {string} Human-readable summary text
  */
 export function generateSummary(bookmarks, originalCount, config) {
   const withLinksCount = bookmarks.length;
@@ -141,7 +161,7 @@ export function generateSummary(bookmarks, originalCount, config) {
   const totalLinksCount = bookmarks.reduce((total, b) => total + (b.all_links?.length || 0), 0);
   
   const summary = [
-    `Twitter Bookmark Scraper Summary`,
+    `TwiMine: Mining Twitter Bookmarks`,
     `================================`,
     ``,
     `Total bookmarks processed: ${originalCount}`,

@@ -1,0 +1,38 @@
+[
+  {
+    "tweet_url": "https://x.com/khant_dev/status/1898807015599939679",
+    "links": [
+      "https://www.substratus.ai/blog/calculating-gpu-memory-for-llm",
+      "https://www.substratus.ai/blog/calculating-gpu-memory-for-llm",
+      "https://www.excel-easy.com/examples/bmi-calculator.html?twclid=2-7jrk1751s90w6yqn4d3hw8fe",
+      "https://www.excel-easy.com/examples/bmi-calculator.html?twclid=2-7jrk1751s90w6yqn4d3hw8fe",
+      "https://www.excel-easy.com/examples/bmi-calculator.html?twclid=2-7jrk1751s90w6yqn4d3hw8fe",
+      "https://www.excel-easy.com/examples/bmi-calculator.html?twclid=2-7jrk1751s90w6yqn4d3hw8fe"
+    ],
+    "found_github_link": false,
+    "github_url": null
+  },
+  {
+    "tweet_url": "https://x.com/khant_dev/status/1898807015599939679/photo/1",
+    "links": [
+      "https://www.substratus.ai/blog/calculating-gpu-memory-for-llm",
+      "https://www.substratus.ai/blog/calculating-gpu-memory-for-llm",
+      "https://www.netmind.ai/rentIntro?twclid=22lmvn7d12xxgft8xr11wr2hy1",
+      "https://www.netmind.ai/rentIntro?twclid=22lmvn7d12xxgft8xr11wr2hy1",
+      "https://www.netmind.ai/rentIntro?twclid=22lmvn7d12xxgft8xr11wr2hy1",
+      "https://www.netmind.ai/rentIntro?twclid=22lmvn7d12xxgft8xr11wr2hy1"
+    ],
+    "found_github_link": false,
+    "github_url": null
+  },
+  {
+    "tweet_url": "https://x.com/NizzyABI/status/1898441606489108524",
+    "links": [
+      "https://0.email/",
+      "https://0.email/",
+      "https://github.com/Mail-0/Zero"
+    ],
+    "found_github_link": true,
+    "github_url": "https://github.com/Mail-0/Zero"
+  }
+]

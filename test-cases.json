@@ -1,0 +1,48 @@
+[
+  {
+    "description": "Simple GitHub URL in text",
+    "text": "Check out this cool project https://github.com/username/repo",
+    "expectedLinks": [
+      "https://github.com/username/repo"
+    ]
+  },
+  {
+    "description": "Multiple GitHub URLs",
+    "text": "Here are two projects: https://github.com/user1/repo1 and https://github.com/user2/repo2",
+    "expectedLinks": [
+      "https://github.com/user1/repo1",
+      "https://github.com/user2/repo2"
+    ]
+  },
+  {
+    "description": "GitHub URL with www",
+    "text": "Project at https://www.github.com/username/repo is cool",
+    "expectedLinks": [
+      "https://www.github.com/username/repo"
+    ]
+  },
+  {
+    "description": "GitHub URL with dashes in username/repo",
+    "text": "See https://github.com/user-name/repo-name",
+    "expectedLinks": [
+      "https://github.com/user-name/repo-name"
+    ]
+  },
+  {
+    "description": "No GitHub URLs",
+    "text": "This is just a regular tweet with no GitHub links",
+    "expectedLinks": []
+  },
+  {
+    "description": "GitHub URL mixed with other text",
+    "text": "The project https://github.com/username/repo has many stars! #coding #opensource",
+    "expectedLinks": [
+      "https://github.com/username/repo"
+    ]
+  },
+  {
+    "description": "GitHub links with ignored patterns",
+    "text": "Don't include these: https://github.com/login and https://github.com/signup",
+    "expectedLinks": []
+  }
+]

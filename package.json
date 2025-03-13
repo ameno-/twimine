@@ -1,0 +1,29 @@
+{
+  "name": "twitter-bookmark-scraper",
+  "version": "1.0.0",
+  "description": "A robust CLI tool for scraping Twitter bookmarks and extracting GitHub links",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "twitter",
+    "bookmark",
+    "scraper",
+    "github",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^11.0.0",
+    "dotenv": "^16.0.3",
+    "playwright": "^1.40.0",
+    "winston": "^3.9.0"
+  },
+  "bin": {
+    "twitter-bookmark-scraper": "./src/index.js"
+  }
+}
